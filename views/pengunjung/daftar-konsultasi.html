@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Konsultasi - Balai Bahasa Provinsi Lampung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand" href="/">
+        <img src="/img/dadad.png" alt="Logo" class="logo-icon me-2">
+        Balai Bahasa Lampung
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="/">Beranda</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/ajukan-konsultasi">Ajukan Konsultasi</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link active" href="/daftar-konsultasi">Daftar Konsultasi</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/struktur-pegawai">Struktur Pegawai</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/login">
+              <i class="fas fa-sign-in-alt me-1"></i>Login
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container text-center">
+      <h1>
+        <i class="fas fa-list-alt me-3"></i>
+        Daftar Permohonan Konsultasi
+      </h1>
+      <p class="lead">Lihat semua permohonan layanan yang telah diajukan</p>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="container my-5">
+    <div class="card fade-in">
+      <div class="card-body">
+        <!-- Filter -->
+        <div class="row mb-4">
+          <div class="col-md-3">
+            <label class="form-label">Filter Bulan</label>
+            <select class="form-select" id="filterBulan">
+              <option value="">Semua Bulan</option>
+              <option value="1">Januari</option>
+              <option value="2">Februari</option>
+              <option value="3">Maret</option>
+              <option value="4">April</option>
+              <option value="5">Mei</option>
+              <option value="6">Juni</option>
+              <option value="7">Juli</option>
+              <option value="8">Agustus</option>
+              <option value="9">September</option>
+              <option value="10">Oktober</option>
+              <option value="11">November</option>
+              <option value="12">Desember</option>
+            </select>
+          </div>
+          <div class="col-md-3">
+            <label class="form-label">Filter Tahun</label>
+            <select class="form-select" id="filterTahun">
+              <option value="">Semua Tahun</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Cari</label>
+            <input type="text" class="form-control" id="searchInput" placeholder="Cari nama, email, instansi...">
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button class="btn btn-primary w-100" onclick="loadData(1)">
+              <i class="fas fa-search me-2"></i>Filter
+            </button>
+          </div>
+        </div>
+
+        <!-- Table -->
+        <div class="table-responsive">
+          <table class="table table-hover">
+            <thead>
+              <tr>
+                <th>No</th>
+                <th>Nama</th>
+                <th>Email</th>
+                <th>Asal Instansi</th>
+                <th>Keperluan</th>
+                <th>Tanggal</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <tr>
+                <td colspan="7" class="text-center">
+                  <div class="spinner"></div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Pagination -->
+        <div id="paginationContainer"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p class="mb-0">
+        <i class="fas fa-copyright me-1"></i>
+        2025 Balai Bahasa Provinsi Lampung. All Rights Reserved.
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    // Populate tahun
+    const currentYear = new Date().getFullYear();
+    const filterTahun = document.getElementById('filterTahun');
+    for (let year = currentYear; year >= currentYear - 5; year--) {
+      filterTahun.innerHTML += `<option value="${year}">${year}</option>`;
+    }
+
+    // Load data
+    window.loadData = async function(page = 1) {
+      const bulan = document.getElementById('filterBulan').value;
+      const tahun = document.getElementById('filterTahun').value;
+      const search = document.getElementById('searchInput').value;
+
+      let url = `/api/pengunjung/konsultasi?page=${page}&limit=10`;
+      if (bulan) url += `&bulan=${bulan}`;
+      if (tahun) url += `&tahun=${tahun}`;
+      if (search) url += `&search=${search}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        const tbody = document.getElementById('tableBody');
+        
+        if (data.success && data.data.length > 0) {
+          let html = '';
+          data.data.forEach((item, index) => {
+            const no = (data.pagination.page - 1) * data.pagination.limit + index + 1;
+            html += `
+              <tr>
+                <td>${no}</td>
+                <td><strong>${item.nama}</strong></td>
+                <td>${item.email}</td>
+                <td>${item.asal_instansi || '-'}</td>
+                <td><span class="badge bg-info">${item.keperluan}</span></td>
+                <td>${formatTanggal(item.created_at)}</td>
+                <td>${getStatusBadge(item.status)}</td>
+              </tr>
+            `;
+          });
+          tbody.innerHTML = html;
+          createPagination(data, 'paginationContainer');
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="7" class="text-center">
+                <div class="alert alert-info mb-0">
+                  <i class="fas fa-info-circle me-2"></i>
+                  Tidak ada data konsultasi
+                </div>
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('tableBody').innerHTML = `
+          <tr>
+            <td colspan="7" class="text-center">
+              <div class="alert alert-danger mb-0">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Gagal memuat data
+              </div>
+            </td>
+          </tr>
+        `;
+      }
+    };
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadData(1);
+    });
+
+    // Search on enter
+    document.getElementById('searchInput').addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        loadData(1);
+      }
+    });
+  </script>
+</body>
+</html>

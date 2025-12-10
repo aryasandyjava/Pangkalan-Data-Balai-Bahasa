@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Beranda - Balai Bahasa Provinsi Lampung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg navbar-dark">
+    <div class="container">
+      <a class="navbar-brand d-flex align-items-center" href="/">
+        <img src="/img/dadad.png" alt="Logo" class="logo-icon me-2">
+        Balai Bahasa Lampung
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          <li class="nav-item">
+            <a class="nav-link active" href="/">Beranda</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/ajukan-konsultasi">Ajukan Konsultasi</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/daftar-konsultasi">Daftar Konsultasi</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/struktur-pegawai">Struktur Pegawai</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/login">
+              <i class="fas fa-sign-in-alt me-1"></i>Login
+            </a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container text-center">
+      <h1>
+        Selamat Datang di Balai Bahasa Provinsi Lampung
+      </h1>
+      <p class="lead">Unit pelayanan Kebahasaan dan Kesastraan</p>
+    </div>
+  </section>
+
+  <!-- Main Content -->
+  <div class="container my-5">
+    <!-- Pegawai Izin Hari Ini -->
+    <div class="card mb-4 fade-in">
+      <div class="card-header">
+        <h5 class="mb-0">
+          <i class="fas fa-calendar-times me-2"></i>
+          Pegawai yang Sedang Tidak ada Hari Ini
+        </h5>
+      </div>
+      <div class="card-body">
+        <div id="pegawaiIzinContainer">
+          <div class="spinner"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Grafik Konsultasi -->
+    <div class="row mb-4">
+      <div class="col-md-6 fade-in">
+        <div class="card">
+          <div class="card-header">
+            <h5 class="mb-0">
+              <i class="fas fa-chart-pie me-2"></i>
+              Statistik Konsultasi
+            </h5>
+          </div>
+          <div class="card-body">
+            <canvas id="grafikKonsultasi" height="300"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-6 fade-in">
+        <div class="card">
+          <div class="card-body">
+            <h5 class="mb-4">
+              <i class="fas fa-info-circle me-2 text-primary"></i>
+              Layanan Konsultasi Kami
+            </h5>
+            <div class="list-group">
+              <div class="list-group-item">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                Ahli bahasa & fasilitasi kebahasaan
+                
+              </div>
+              <div class="list-group-item">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                UKBI (Uji Kemahiran Berbahasa Indonesia)
+              </div>
+              <div class="list-group-item">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                Penerjemah
+              </div>
+              <div class="list-group-item">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                Permohonan data dan informasi
+              </div>
+              <div class="list-group-item">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                PKL/Magang
+              </div>
+              <div class="list-group-item">
+                <i class="fas fa-check-circle text-success me-2"></i>
+                Peminjaman aula handak
+              </div>
+            </div>
+            <a href="/ajukan-konsultasi" class="btn btn-primary w-100 mt-3">
+              <i class="fas fa-paper-plane me-2"></i>
+              Ajukan Konsultasi Sekarang
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="container">
+      <p class="mb-0">
+        <i class="fas fa-copyright  me-1"></i>
+        2025 Balai Bahasa Provinsi Lampung. All Rights Reserved.
+      </p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script src="/js/chart-config.js"></script>
+  <script>
+    let grafikKonsultasi = null;
+
+    // Load pegawai yang sedang izin
+    async function loadPegawaiIzin() {
+      try {
+        const response = await fetch('/api/pengunjung/pegawai-izin-hari-ini');
+        const data = await response.json();
+        
+        const container = document.getElementById('pegawaiIzinContainer');
+        
+        if (data.success && data.data.length > 0) {
+          let html = '<div class="table-responsive"><table class="table table-hover">';
+          html += '<thead><tr><th>Nama</th><th>Jabatan</th><th>Jenis Izin</th><th>Periode</th><th>Status</th></tr></thead><tbody>';
+          
+          data.data.forEach(item => {
+            html += `
+              <tr>
+                <td>
+                  <img src="/uploads/${item.foto || 'default.jpg'}" class="profile-img-small me-2" alt="${item.nama}" onerror="this.src='/uploads/default.jpg'">
+                  <strong>${item.nama}</strong>
+                </td>
+                <td>${item.jabatan}</td>
+                <td><span class="badge bg-info">${item.jenis_izin}</span></td>
+                <td>${formatTanggalSingkat(item.tanggal_mulai)} - ${formatTanggalSingkat(item.tanggal_selesai)}</td>
+                <td><span class="badge bg-warning">Tidak ada di kantor</span></td>
+              </tr>
+            `;
+          });
+          
+          html += '</tbody></table></div>';
+          container.innerHTML = html;
+        } else {
+          container.innerHTML = `
+            <div class="alert alert-info text-center">
+              <i class="fas fa-info-circle me-2"></i>
+              Semua pegawai ada di kantor hari ini
+            </div>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('pegawaiIzinContainer').innerHTML = `
+          <div class="alert alert-danger">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            Gagal memuat data
+          </div>
+        `;
+      }
+    }
+
+    // Load grafik konsultasi
+    async function loadGrafikKonsultasi() {
+      try {
+        const response = await fetch('/api/pengunjung/grafik-konsultasi');
+        const data = await response.json();
+        
+        if (data.success && data.data.length > 0) {
+          const labels = data.data.map(item => item.keperluan);
+          const values = data.data.map(item => item.jumlah);
+          
+          if (grafikKonsultasi) {
+            grafikKonsultasi.destroy();
+          }
+          
+          grafikKonsultasi = createDoughnutChart(
+            'grafikKonsultasi',
+            labels,
+            values,
+            'Distribusi Konsultasi per Jenis Keperluan'
+          );
+        }
+      } catch (error) {
+        console.error('Error loading chart:', error);
+      }
+    }
+
+    // Initialize
+    document.addEventListener('DOMContentLoaded', () => {
+      loadPegawaiIzin();
+      loadGrafikKonsultasi();
+    });
+  </script>
+</body>
+</html>

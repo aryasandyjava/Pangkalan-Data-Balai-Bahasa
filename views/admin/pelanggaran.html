@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pelanggaran - Balai Bahasa Provinsi Lampung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-3 col-lg-2 sidebar">
+        <h4 class="text-white mb-4">
+          <i class="fas fa-user-shield me-2"></i>
+          <span id="userName">Admin</span>
+        </h4>
+        <nav class="nav flex-column">
+          <a class="nav-link" href="/admin/dashboard">
+            <i class="fas fa-home"></i>Dashboard
+          </a>
+          <a class="nav-link" href="/admin/data-karyawan">
+            <i class="fas fa-users"></i>Data Karyawan
+          </a>
+          <a class="nav-link" href="/admin/verifikasi-izin">
+            <i class="fas fa-calendar-check"></i>Verifikasi Izin
+          </a>
+          <a class="nav-link active" href="/admin/pelanggaran">
+            <i class="fas fa-exclamation-triangle"></i>Pelanggaran
+          </a>
+          <a class="nav-link" href="/admin/konsultasi">
+            <i class="fas fa-comment-dots"></i>Konsultasi
+          </a>
+          <a class="nav-link" href="/admin/laporan">
+            <i class="fas fa-chart-bar"></i>Laporan
+          </a>
+          <a class="nav-link" href="#" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>Logout
+          </a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-9 col-lg-10 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>
+            <i class="fas fa-exclamation-triangle me-2 text-primary"></i>
+            Data Pelanggaran Pegawai
+          </h2>
+          <div>
+            <a href="/api/export/pelanggaran" class="btn btn-success me-2">
+              <i class="fas fa-file-excel me-2"></i>Export ke Excel
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPelanggaran" onclick="resetForm()">
+              <i class="fas fa-plus me-2"></i>Tambah Pelanggaran
+            </button>
+          </div>
+        </div>
+
+        <div class="card fade-in">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nama Pegawai</th>
+                    <th>NIP</th>
+                    <th>Jabatan</th>
+                    <th>Tanggal</th>
+                    <th>Jam</th>
+                    <th>Keterangan</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr>
+                    <td colspan="8" class="text-center">
+                      <div class="spinner"></div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Pelanggaran -->
+  <div class="modal fade" id="modalPelanggaran" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Input Pelanggaran</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <form id="pelanggaranForm">
+            <div class="mb-3">
+              <label class="form-label">Pegawai *</label>
+              <select class="form-select" id="id_karyawan" required>
+                <option value="">-- Pilih Pegawai --</option>
+              </select>
+            </div>
+            <div class="row">
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Tanggal *</label>
+                <input type="date" class="form-control" id="tanggal" required>
+              </div>
+              <div class="col-md-6 mb-3">
+                <label class="form-label">Jam *</label>
+                <input type="time" class="form-control" id="jam" required>
+              </div>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Keterangan Pelanggaran *</label>
+              <textarea class="form-control" id="keterangan" rows="4" required></textarea>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+          <button type="button" class="btn btn-primary" onclick="savePelanggaran()">Simpan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    let modalPelanggaran;
+
+    async function checkAuth() {
+      const session = await checkSession();
+      if (!session || session.role !== 'admin') {
+        window.location.href = '/login';
+        return false;
+      }
+      document.getElementById('userName').textContent = session.nama;
+      return true;
+    }
+
+    async function loadData() {
+      try {
+        const response = await fetch('/api/admin/pelanggaran');
+        const data = await response.json();
+        
+        const tbody = document.getElementById('tableBody');
+        
+        if (data.success && data.data.length > 0) {
+          let html = '';
+          data.data.forEach((item, index) => {
+            html += `
+              <tr>
+                <td>${index + 1}</td>
+                <td><strong>${item.nama}</strong></td>
+                <td>${item.nip}</td>
+                <td><span class="badge bg-primary">${item.jabatan}</span></td>
+                <td>${formatTanggal(item.tanggal)}</td>
+                <td>${formatWaktu(item.jam)}</td>
+                <td>${item.keterangan}</td>
+                <td>
+                  <button class="btn btn-sm btn-danger" onclick="deletePelanggaran(${item.id})">
+                    <i class="fas fa-trash"></i>
+                  </button>
+                </td>
+              </tr>
+            `;
+          });
+          tbody.innerHTML = html;
+        } else {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="text-center">
+                <div class="alert alert-info mb-0">Belum ada data pelanggaran</div>
+              </td>
+            </tr>
+          `;
+        }
+      } catch (error) {
+        document.getElementById('tableBody').innerHTML = `
+          <tr>
+            <td colspan="8" class="text-center">
+              <div class="alert alert-danger mb-0">Gagal memuat data</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    async function loadKaryawan() {
+      try {
+        const response = await fetch('/api/admin/karyawan');
+        const data = await response.json();
+        
+        const select = document.getElementById('id_karyawan');
+        select.innerHTML = '<option value="">-- Pilih Pegawai --</option>';
+        
+        if (data.success) {
+          data.data.forEach(k => {
+            select.innerHTML += `<option value="${k.id}">${k.nama} (${k.nip})</option>`;
+          });
+        }
+      } catch (error) {
+        console.error('Error loading karyawan:', error);
+      }
+    }
+
+    function resetForm() {
+      document.getElementById('pelanggaranForm').reset();
+      const today = new Date().toISOString().split('T')[0];
+      document.getElementById('tanggal').value = today;
+    }
+
+    async function savePelanggaran() {
+      const formData = {
+        id_karyawan: document.getElementById('id_karyawan').value,
+        tanggal: document.getElementById('tanggal').value,
+        jam: document.getElementById('jam').value,
+        keterangan: document.getElementById('keterangan').value
+      };
+
+      try {
+        const response = await fetch('/api/admin/pelanggaran', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(formData)
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showAlert(data.message, 'success');
+          modalPelanggaran.hide();
+          loadData();
+        } else {
+          showAlert(data.message, 'danger');
+        }
+      } catch (error) {
+        showAlert('Gagal menyimpan data', 'danger');
+      }
+    }
+
+    function deletePelanggaran(id) {
+      confirmAction('Yakin ingin menghapus pelanggaran ini?', async () => {
+        try {
+          const response = await fetch(`/api/admin/pelanggaran/${id}`, {
+            method: 'DELETE'
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert(data.message, 'success');
+            loadData();
+          } else {
+            showAlert(data.message, 'danger');
+          }
+        } catch (error) {
+          showAlert('Gagal menghapus data', 'danger');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (await checkAuth()) {
+        modalPelanggaran = new bootstrap.Modal(document.getElementById('modalPelanggaran'));
+        loadKaryawan();
+        loadData();
+      }
+    });
+  </script>
+</body>
+</html>

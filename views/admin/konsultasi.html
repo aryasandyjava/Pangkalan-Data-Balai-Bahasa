@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Konsultasi - Balai Bahasa Provinsi Lampung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <div class="container-fluid">
+    <div class="row">
+      <!-- Sidebar -->
+      <div class="col-md-3 col-lg-2 sidebar">
+        <h4 class="text-white mb-4">
+          <i class="fas fa-user-shield me-2"></i>
+          <span id="userName">Admin</span>
+        </h4>
+        <nav class="nav flex-column">
+          <a class="nav-link" href="/admin/dashboard">
+            <i class="fas fa-home"></i>Dashboard
+          </a>
+          <a class="nav-link" href="/admin/data-karyawan">
+            <i class="fas fa-users"></i>Data Karyawan
+          </a>
+          <a class="nav-link" href="/admin/verifikasi-izin">
+            <i class="fas fa-calendar-check"></i>Verifikasi Izin
+          </a>
+          <a class="nav-link" href="/admin/pelanggaran">
+            <i class="fas fa-exclamation-triangle"></i>Pelanggaran
+          </a>
+          <a class="nav-link active" href="/admin/konsultasi">
+            <i class="fas fa-comment-dots"></i>Konsultasi
+          </a>
+          <a class="nav-link" href="/admin/laporan">
+            <i class="fas fa-chart-bar"></i>Laporan
+          </a>
+          <a class="nav-link" href="#" onclick="logout()">
+            <i class="fas fa-sign-out-alt"></i>Logout
+          </a>
+        </nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="col-md-9 col-lg-10 p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2>
+            <i class="fas fa-comment-dots me-2 text-primary"></i>
+            Verifikasi Konsultasi
+          </h2>
+          <a href="/api/export/konsultasi" class="btn btn-success">
+            <i class="fas fa-file-excel me-2"></i>Export ke Excel
+          </a>
+        </div>
+
+        <!-- Filter Status -->
+        <div class="card mb-4 fade-in">
+          <div class="card-body">
+            <div class="btn-group" role="group">
+              <button class="btn btn-outline-primary active" onclick="filterStatus('all')">
+                Semua
+              </button>
+              <button class="btn btn-outline-warning" onclick="filterStatus('pending')">
+                Pending
+              </button>
+              <button class="btn btn-outline-success" onclick="filterStatus('disetujui')">
+                Disetujui
+              </button>
+              <button class="btn btn-outline-danger" onclick="filterStatus('ditolak')">
+                Ditolak
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card fade-in">
+          <div class="card-body">
+            <div class="table-responsive">
+              <table class="table table-hover">
+                <thead>
+                  <tr>
+                    <th>No</th>
+                    <th>Nama</th>
+                    <th>Email</th>
+                    <th>Asal Instansi</th>
+                    <th>Nomor</th>
+                    <th>Keperluan</th>
+                    <th>Keterangan</th>
+                    <th>Tanggal</th>
+                    <th>Status</th>
+                    <th>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableBody">
+                  <tr>
+                    <td colspan="10" class="text-center">
+                      <div class="spinner"></div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Detail -->
+  <div class="modal fade" id="modalDetail" tabindex="-1">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title">Detail Konsultasi</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="modalDetailContent">
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    let allData = [];
+    let currentFilter = 'all';
+    let modalDetail;
+
+    async function checkAuth() {
+      const session = await checkSession();
+      if (!session || session.role !== 'admin') {
+        window.location.href = '/login';
+        return false;
+      }
+      document.getElementById('userName').textContent = session.nama;
+      return true;
+    }
+
+    async function loadData() {
+      try {
+        const response = await fetch('/api/admin/konsultasi');
+        const data = await response.json();
+        
+        if (data.success) {
+          allData = data.data;
+          renderTable();
+        }
+      } catch (error) {
+        document.getElementById('tableBody').innerHTML = `
+          <tr>
+            <td colspan="10" class="text-center">
+              <div class="alert alert-danger mb-0">Gagal memuat data</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function filterStatus(status) {
+      currentFilter = status;
+      
+      // Update button active state
+      document.querySelectorAll('.btn-group .btn').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      event.target.classList.add('active');
+      
+      renderTable();
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('tableBody');
+      let filteredData = currentFilter === 'all' 
+        ? allData 
+        : allData.filter(item => item.status === currentFilter);
+      
+      if (filteredData.length > 0) {
+        let html = '';
+        filteredData.forEach((item, index) => {
+          html += `
+            <tr>
+              <td>${index + 1}</td>
+              <td><strong>${item.nama}</strong></td>
+              <td>${item.email}</td>
+              <td>${item.asal_instansi || '-'}</td>
+              <td>${item.nomor || '-'}</td>
+              <td><span class="badge bg-info">${item.keperluan}</span></td>
+              <td>
+                <small>${item.keterangan ? item.keterangan.substring(0, 50) + '...' : '-'}</small>
+                ${item.keterangan ? `<br><button class="btn btn-sm btn-link p-0" onclick="showDetail(${item.id})">Lihat detail</button>` : ''}
+              </td>
+              <td>${formatTanggal(item.created_at)}</td>
+              <td>${getStatusBadge(item.status)}</td>
+              <td>
+                ${item.status === 'pending' ? `
+                  <button class="btn btn-sm btn-success" onclick="updateStatus(${item.id}, 'disetujui')">
+                    <i class="fas fa-check"></i>
+                  </button>
+                  <button class="btn btn-sm btn-danger" onclick="updateStatus(${item.id}, 'ditolak')">
+                    <i class="fas fa-times"></i>
+                  </button>
+                ` : '-'}
+              </td>
+            </tr>
+          `;
+        });
+        tbody.innerHTML = html;
+      } else {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="10" class="text-center">
+              <div class="alert alert-info mb-0">Tidak ada data</div>
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    function showDetail(id) {
+      const item = allData.find(i => i.id === id);
+      if (item) {
+        const content = `
+          <div class="mb-3">
+            <strong>Nama:</strong> ${item.nama}
+          </div>
+          <div class="mb-3">
+            <strong>Email:</strong> ${item.email}
+          </div>
+          <div class="mb-3">
+            <strong>Asal Instansi:</strong> ${item.asal_instansi || '-'}
+          </div>
+          <div class="mb-3">
+            <strong>Nomor:</strong> ${item.nomor || '-'}
+          </div>
+          <div class="mb-3">
+            <strong>Keperluan:</strong> ${item.keperluan}
+          </div>
+          <div class="mb-3">
+            <strong>Keterangan:</strong><br>
+            ${item.keterangan || '-'}
+          </div>
+          <div class="mb-3">
+            <strong>Status:</strong> ${getStatusBadge(item.status)}
+          </div>
+          <div class="mb-3">
+            <strong>Tanggal Ajuan:</strong> ${formatTanggal(item.created_at)}
+          </div>
+        `;
+        
+        document.getElementById('modalDetailContent').innerHTML = content;
+        modalDetail.show();
+      }
+    }
+
+    async function updateStatus(id, status) {
+      const statusText = status === 'disetujui' ? 'menyetujui' : 'menolak';
+      
+      confirmAction(`Yakin ingin ${statusText} konsultasi ini?`, async () => {
+        try {
+          const response = await fetch(`/api/admin/konsultasi/${id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ status })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            showAlert(`Konsultasi berhasil ${status === 'disetujui' ? 'disetujui' : 'ditolak'}!`, 'success');
+            loadData();
+          } else {
+            showAlert(data.message, 'danger');
+          }
+        } catch (error) {
+          showAlert('Gagal memperbarui status', 'danger');
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', async () => {
+      if (await checkAuth()) {
+        modalDetail = new bootstrap.Modal(document.getElementById('modalDetail'));
+        loadData();
+      }
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+node_modules
+
+.env
+uploads/ # kalau nggak mau commit file upload lokal

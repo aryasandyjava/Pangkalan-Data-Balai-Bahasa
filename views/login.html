@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Balai Bahasa Provinsi Lampung</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="/css/style.css">
+  <style>
+    body {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #2563eb 0%, #38bdf8 100%);
+    }
+    .login-container {
+      max-width: 800px;
+      width: 100%;
+      padding: 20px;
+    }
+    .login-card {
+      background: white;
+      border-radius: 20px;
+      padding: 3rem;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .logo-container {
+      text-align: center;
+      margin-bottom: 2rem;
+    }
+    .logo-icon {
+      font-size: 4rem;
+      color: #2563eb;
+      margin-bottom: 1rem;
+      width: 200px;
+      height: auto;
+    }
+    .login-title {
+      color: #1e40af;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .login-subtitle {
+      color: #64748b;
+      font-size: 0.95rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo-container">
+        <img src="/img/dadad.png" alt="Logo" class="logo-icon me-2">
+        <h2 class="login-title">Balai Bahasa</h2>
+        <p class="login-subtitle">Provinsi Lampung</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="mb-3">
+          <label class="form-label">
+            <i class="fas fa-envelope me-2"></i>Email
+          </label>
+          <input type="email" class="form-control" id="email" required>
+        </div>
+
+        <div class="mb-4">
+          <label class="form-label">
+            <i class="fas fa-lock me-2"></i>Password
+          </label>
+          <input type="password" class="form-control" id="password" required>
+        </div>
+
+        <button type="submit" class="btn btn-primary w-100 mb-3">
+          <i class="fas fa-sign-in-alt me-2"></i>Login
+        </button>
+
+        <div class="text-center">
+          <a href="/" class="text-decoration-none">
+            <i class="fas fa-home me-1"></i>Kembali ke Beranda
+          </a>
+        </div>
+      </form>
+    </div>
+
+    <div class="text-center mt-4">
+      <p class="text-white">
+        <small>&copy; 2024 Balai Bahasa Provinsi Lampung</small>
+      </p>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ email, password })
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          showAlert('Login berhasil! Mengalihkan...', 'success');
+          setTimeout(() => {
+            if (data.role === 'admin') {
+              window.location.href = '/admin/dashboard';
+            } else {
+              window.location.href = '/karyawan/dashboard';
+            }
+          }, 1000);
+        } else {
+          showAlert(data.message, 'danger');
+        }
+      } catch (error) {
+        showAlert('Terjadi kesalahan saat login', 'danger');
+      }
+    });
+  </script>
+</body>
+</html>
