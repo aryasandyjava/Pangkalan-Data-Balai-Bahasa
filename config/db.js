@@ -1,14 +1,7 @@
 const mysql = require('mysql2');
 
-const pool = mysql.createPool({
-  host: 'localhost',
-  user: 'root',
-  password: '',
-  database: 'pangkalan_data_balai',
-  waitForConnections: true,
-  connectionLimit: 10,
-  queueLimit: 0
-});
+// ✅ PAKAI DATABASE_URL DARI RAILWAY
+const pool = mysql.createPool(process.env.DATABASE_URL);
 
 const promisePool = pool.promise();
 
